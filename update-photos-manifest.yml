@@ -1,0 +1,34 @@
+name: Update photos manifest
+
+# Keeps photos-manifest.json in sync with what's actually in photos/,
+# since GitHub Pages can't run photos.php (no PHP on static hosting).
+# Runs generate_photos_manifest.py and commits the result back whenever
+# a push touches the photos folder — the closest static-hosting
+# equivalent to "drop a file in and it appears".
+
+on:
+  push:
+    paths:
+      - "photos/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate photos-manifest.json
+        run: python3 generate_photos_manifest.py
+
+      - name: Commit updated manifest (if it changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add photos-manifest.json
+          git diff --staged --quiet || git commit -m "Auto-update photos manifest"
+          git push
