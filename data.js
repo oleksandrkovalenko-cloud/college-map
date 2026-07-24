@@ -10,7 +10,7 @@ const COLLEGE_DATA = {
     name: "Фаховий коледж ракетно-космічного машинобудування ДНУ ім. О. Гончара",
     fullName: "Відокремлений структурний підрозділ «Фаховий коледж ракетно-космічного машинобудування Дніпровського національного університету імені Олеся Гончара»",
     address: "вул. О. М. Макарова, 27, м. Дніпро, 49089",
-    photos: []
+    photos: ["photos/college-1.jpg"]
   },
 
   /* Map polygon geometry lives here too, so index.html has no inline coordinates.
@@ -30,7 +30,7 @@ const COLLEGE_DATA = {
       address: "вул. Макарова, 27",
       color: "#2C5F8A",
       photoSide: "left",
-      photos: [],
+      photos: ["photos/admin/admin_1.jpg", "photos/admin/admin_2.jpg", "photos/admin/admin_3.jpg", "photos/admin/admin_4.jpg"],
       polygon: "170,428 271,428 271,772 169,772 169,724 202,724 202,480 170,480",
       labelX: 220, labelY: 600,
       floors: [
@@ -103,7 +103,7 @@ const COLLEGE_DATA = {
       address: "вул. Макарова, 27",
       color: "#1E7F72",
       photoSide: "left",
-      photos: [],
+      photos: ["photos/lab/lab_1.jpg"],
       polygon: "316,190 494,190 494,254 528,254 528,354 472,354 472,254 316,254",
       labelX: 405, labelY: 222,
       floors: [
@@ -147,7 +147,7 @@ const COLLEGE_DATA = {
       address: "вул. Макарова, 27",
       color: "#B85C2C",
       photoSide: "left",
-      photos: [],
+      photos: ["photos/tech/tech_1.jpg"],
       polygon: "465,471 524,471 524,720 465,720",
       labelX: 494, labelY: 595,
       floors: [
@@ -167,7 +167,7 @@ const COLLEGE_DATA = {
       address: "вул. Макарова, 27/1",
       color: "#6B4C82",
       photoSide: "left",
-      photos: [],
+      photos: ["photos/dorm/dorm_1.jpg", "photos/dorm/dorm_2.jpg", "photos/dorm/dorm_3.jpg"],
       polygon: "164,235 317,235 317,304 164,304",
       labelX: 240, labelY: 269,
       floors: [
