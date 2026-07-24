@@ -13,9 +13,20 @@
 <div class="wrap">
 
   <header>
-    <p class="eyebrow">Схематична карта · навігація по кампусу</p>
-    <h1 id="inst-name"></h1>
-    <p id="inst-address"></p>
+    <div class="header-row">
+      <div>
+        <p class="eyebrow">Схематична карта · навігація по кампусу</p>
+        <h1 id="inst-name"></h1>
+        <p id="inst-address"></p>
+      </div>
+      <div class="header-actions">
+        <a id="maps-place-link" class="header-link" href="#" target="_blank" rel="noopener">Профіль на Google Maps</a>
+        <button id="share-btn" class="share-btn" title="Поділитися розташуванням" aria-label="Поділитися розташуванням">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
+          Поділитися
+        </button>
+      </div>
+    </div>
   </header>
 
   <!-- ============ PAGE: MAP ============ -->
@@ -23,11 +34,11 @@
 
     <div class="symbols-bar">
       <span class="sym"><svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="#8C2A3D" stroke-width="2.5" stroke-dasharray="6 5"/></svg> маршрут трамвая (уздовж вул. Макарова)</span>
-      <span class="sym"><svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#A67C27"/></svg> заклад торгівлі</span>
       <span class="sym"><svg width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="#8A8980"/><path d="M10 15 L10 5 M10 5 L7 9 M10 5 L13 9" stroke="#2C2C2A" stroke-width="1.4" fill="none"/></svg> напрямок на північ</span>
       <span class="note">Схема умовна, не в масштабі. Відстані — розрахункові (по координатах, Google Maps).</span>
     </div>
 
+    <div class="map-section">
     <div class="map-stage map-frame">
       <svg viewBox="0 0 640 1080" xmlns="http://www.w3.org/2000/svg" role="img" font-family="-apple-system,Segoe UI,Arial,sans-serif">
         <title>Схематична карта розташування коледжу</title>
@@ -73,6 +84,12 @@
         <g id="stop-bottom-dots" transform="translate(55,1039)"></g>
         <text id="stop-bottom-label" x="99" y="1043" font-size="14" fill="#2C2C2A" font-weight="600"></text>
       </svg>
+    </div>
+
+      <div class="side-panel">
+        <div class="side-frame" id="maps-embed-frame" aria-label="Google Maps"></div>
+        <div class="side-frame" id="college-photo-frame" aria-label="Фото коледжу"></div>
+      </div>
     </div>
 
     <div class="tiles-row">

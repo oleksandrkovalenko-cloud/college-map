@@ -6,6 +6,12 @@
 
 const MODE_COLOR = { tram: "var(--tram)", trolley: "var(--trolley)", bus: "var(--bus)" };
 
+// Non-breaking space between the number and "м" so a line-wrap can never
+// separate them.
+function fmtDist(m){
+  return "≈" + m + "\u00A0м";
+}
+
 /* ---------- navigation ---------- */
 function showPage(id){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -88,7 +94,7 @@ function renderStopMarker(stop, dotsId, labelId, baseX){
     x += 16;
   });
   const label = document.getElementById(labelId);
-  label.textContent = "Зупинка громадського транспорту · ≈" + stop.distance + " м";
+  label.textContent = "Зупинка громадського транспорту · " + fmtDist(stop.distance);
   label.setAttribute("x", baseX + x + 8);
 }
 
@@ -121,6 +127,38 @@ function directionsUrlByCoords(lat, lng){
   return "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng;
 }
 
+async function shareLocation(){
+  const shareData = {
+    title: COLLEGE_DATA.institution.name,
+    text: COLLEGE_DATA.institution.address,
+    url: COLLEGE_DATA.directions.placeUrl
+  };
+  if (navigator.share){
+    try { await navigator.share(shareData); } catch (err) { /* user cancelled — do nothing */ }
+    return;
+  }
+  // No Web Share API (most desktop browsers) — copy the link instead.
+  try {
+    await navigator.clipboard.writeText(shareData.url);
+    showToast("Посилання скопійовано");
+  } catch (err) {
+    showToast(shareData.url); // clipboard blocked too — at least show the link
+  }
+}
+
+let toastTimer = null;
+function showToast(text){
+  let toast = document.getElementById("toast");
+  if (!toast){
+    toast = el("div", { id: "toast", class: "toast" });
+    document.body.appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
 function renderTransportTile(){
   const box = document.getElementById("transport-list");
 
@@ -142,7 +180,7 @@ function renderTransportTile(){
     box.insertAdjacentHTML("beforeend", `
       <div class="stop-block">
         <p class="stop-title">Зупинка «${stop.street}»</p>
-        <p class="stop-dist">≈${stop.distance} м ${stop.direction} від коледжу</p>
+        <p class="stop-dist">${fmtDist(stop.distance)} ${stop.direction} від коледжу</p>
         ${modesHtml}
       </div>
     `);
@@ -153,15 +191,53 @@ function renderTransportTile(){
 /* ---------- tile: nearby amenities ---------- */
 function renderPoiTile(){
   const box = document.getElementById("poi-list");
-  COLLEGE_DATA.poi.forEach(p => {
+  const sorted = [...COLLEGE_DATA.poi].sort((a, b) => a.distance - b.distance);
+  sorted.forEach(p => {
     box.appendChild(el("div", { class: "b-item" }, `
       <div class="poi-dot"></div>
-      <div class="b-text">${p.name}<span class="sub">${p.category} · ${p.address} · ≈${p.distance} м</span></div>
+      <div class="b-text">${p.name} <span class="poi-distance">${fmtDist(p.distance)}</span><span class="sub">${p.category} · ${p.address}</span></div>
       <a class="poi-route-link" href="${directionsUrlByCoords(p.lat, p.lng)}" target="_blank" rel="noopener" title="Побудувати маршрут до ${p.name}" aria-label="Побудувати маршрут до ${p.name}">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
       </a>
     `));
   });
+}
+
+/* ---------- home page: Google Maps embed + college photo ---------- */
+function renderMapsEmbed(){
+  const container = document.getElementById("maps-embed-frame");
+  const { lat, lng } = COLLEGE_DATA.directions;
+  container.innerHTML = `<iframe src="https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Google Maps: розташування коледжу"></iframe>`;
+}
+
+// Reuses the exact same carousel markup/behaviour as building photos
+// (carouselGoTo/carouselNav are generic by id), just for the college's
+// own main-building photo instead of a specific corpus.
+function renderCollegePhotoFrame(){
+  const container = document.getElementById("college-photo-frame");
+  const photos = COLLEGE_DATA.institution.photos || [];
+  if (photos.length === 0){
+    container.innerHTML = `
+      <div class="photo-placeholder small-placeholder">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M4 8h3l2-2h6l2 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/>
+          <circle cx="12" cy="14" r="3.6"/>
+        </svg>
+        <span>Фото коледжу</span>
+        <span class="small">додайте зображення (college-1.jpg) у photos/</span>
+      </div>
+    `;
+    return;
+  }
+  const slides = photos.map((src,i) =>
+    `<img src="${src}" class="carousel-slide${i===0?" active":""}" alt="Фото коледжу ${i+1} з ${photos.length}">`
+  ).join("");
+  const controls = photos.length > 1 ? `
+    <button class="carousel-arrow prev" onclick="carouselNav('college',-1)" aria-label="Попереднє фото">‹</button>
+    <button class="carousel-arrow next" onclick="carouselNav('college',1)" aria-label="Наступне фото">›</button>
+    <div class="carousel-dots">${photos.map((_,i) => `<button class="carousel-dot${i===0?" active":""}" onclick="carouselGoTo('college',${i})" aria-label="Фото ${i+1}"></button>`).join("")}</div>
+  ` : "";
+  container.innerHTML = `<div class="carousel" id="carousel-college" data-index="0" data-count="${photos.length}">${slides}${controls}</div>`;
 }
 
 /* ---------- building detail pages ---------- */
@@ -203,18 +279,7 @@ function renderLocationMap(building){
    that's needed later — no markup changes. */
 function renderPhotoArea(b){
   if (!b.photos || b.photos.length === 0){
-    return `
-      <div class="bpage-photo">
-        <div class="photo-placeholder">
-          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-            <path d="M4 8h3l2-2h6l2 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/>
-            <circle cx="12" cy="14" r="3.6"/>
-          </svg>
-          <span>Фото: ${b.name.toLowerCase()}</span>
-          <span class="small">місце для фото або каруселі — додайте шляхи у поле photos у data.js</span>
-        </div>
-      </div>
-    `;
+    return ""; // no photo yet -> render nothing; the info column expands to fill the row
   }
   const slides = b.photos.map((src,i) =>
     `<img src="${src}" class="carousel-slide${i===0?" active":""}" alt="${b.name}, фото ${i+1} з ${b.photos.length}">`
@@ -313,6 +378,9 @@ async function loadDynamicPhotos(){
           b.photos = found[b.id];
         }
       });
+      if (Array.isArray(found.college) && found.college.length > 0){
+        COLLEGE_DATA.institution.photos = found.college;
+      }
       return; // got a usable source — no need to try the next one
     } catch (err) {
       // this source unavailable or invalid — fall through and try the next
@@ -331,10 +399,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderBuildingsTile();
   renderTransportTile();
   renderPoiTile();
+  renderMapsEmbed();
+  renderCollegePhotoFrame();
 
   COLLEGE_DATA.buildings.forEach(renderBuildingPage);
 
   document.getElementById("inst-name").textContent = COLLEGE_DATA.institution.name;
   document.getElementById("inst-address").textContent = COLLEGE_DATA.institution.address;
   document.getElementById("inst-fullname").textContent = COLLEGE_DATA.institution.fullName;
+  document.getElementById("share-btn").addEventListener("click", shareLocation);
+  document.getElementById("maps-place-link").href = COLLEGE_DATA.directions.placeUrl;
 });

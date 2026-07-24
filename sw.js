@@ -15,7 +15,7 @@
    change, so the old cache is cleared and the new files are pre-loaded.
    ========================================================================== */
 
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const CACHE_NAME = "campus-scheme-" + CACHE_VERSION;
 
 // Required — if any of these fail to fetch, install() fails and nothing

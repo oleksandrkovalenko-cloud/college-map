@@ -14,7 +14,7 @@ import json
 import re
 from pathlib import Path
 
-KNOWN_BUILDINGS = ["admin", "lab", "tech", "dorm"]
+KNOWN_BUILDINGS = ["admin", "lab", "tech", "dorm", "college"]
 ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 
 

@@ -19,7 +19,7 @@ header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-cache');
 
 $dir = __DIR__ . '/photos';
-$knownBuildings = ['admin', 'lab', 'tech', 'dorm'];
+$knownBuildings = ['admin', 'lab', 'tech', 'dorm', 'college'];
 $result = array_fill_keys($knownBuildings, []);
 $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
 
