@@ -15,7 +15,7 @@
    change, so the old cache is cleared and the new files are pre-loaded.
    ========================================================================== */
 
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v8";
 const CACHE_NAME = "campus-scheme-" + CACHE_VERSION;
 
 // Required — if any of these fail to fetch, install() fails and nothing
@@ -25,16 +25,20 @@ const CORE_ASSETS = [
   "./index.html",
   "./style.css",
   "./script.js",
-  "./data.js"
+  "./data.js",
+  "./logo.png",
+  "./favicon.ico",
+  "./favicon-16.png",
+  "./favicon-32.png",
+  "./favicon-192.png",
+  "./apple-touch-icon.png"
 ];
 
-// Optional — cached best-effort. photos.php only exists on PHP-capable
-// deployments, and photos-manifest.json only where the GitHub Actions
-// workflow has run; either being missing must never break caching of
-// the CORE_ASSETS above, so both are added separately with their own
-// error handling instead of inside cache.addAll().
+// Optional — cached best-effort. photos-manifest.json only exists where
+// the GitHub Actions workflow has run at least once; it being missing
+// must never break caching of the CORE_ASSETS above, so it's added
+// separately with its own error handling instead of inside cache.addAll().
 const OPTIONAL_ASSETS = [
-  "./photos.php",
   "./photos-manifest.json"
 ];
 
@@ -68,12 +72,11 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
 
-  // photos.php / photos-manifest.json report what's in photos/ — one
-  // live-scanned on request, the other regenerated on push — but both
-  // represent "current reality" and so get network-first instead of
-  // stale-while-revalidate: try live data, fall back to the last-known
-  // cached listing only when offline.
-  if (url.pathname.endsWith("/photos.php") || url.pathname.endsWith("/photos-manifest.json")){
+  // photos-manifest.json reports what's in photos/ as of the last CI
+  // run — it represents "current reality" and so gets network-first
+  // instead of stale-while-revalidate: try live data, fall back to the
+  // last-known cached listing only when offline.
+  if (url.pathname.endsWith("/photos-manifest.json")){
     event.respondWith(
       fetch(event.request.url, { cache: "no-store" })
         .then(response => {

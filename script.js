@@ -206,8 +206,12 @@ function renderPoiTile(){
 /* ---------- home page: Google Maps embed + college photo ---------- */
 function renderMapsEmbed(){
   const container = document.getElementById("maps-embed-frame");
-  const { lat, lng } = COLLEGE_DATA.directions;
-  container.innerHTML = `<iframe src="https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Google Maps: розташування коледжу"></iframe>`;
+  // Querying by name+address (rather than bare lat,lng) makes the embed
+  // resolve to the actual place listing — a named, clickable marker with
+  // its rating/photos/reviews attached — instead of an anonymous pin
+  // that only carries coordinates.
+  const query = `${COLLEGE_DATA.institution.name}, ${COLLEGE_DATA.directions.destinationAddress}`;
+  container.innerHTML = `<iframe src="https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Google Maps: розташування коледжу"></iframe>`;
 }
 
 // Reuses the exact same carousel markup/behaviour as building photos
@@ -355,37 +359,79 @@ function renderBuildingPage(b){
 }
 
 /* ---------- dynamic photo discovery ----------
-   Asks photos.php what's actually in photos/ right now and overwrites
-   each building's `photos` array in place before pages are rendered.
-   If the endpoint is missing or fails (static-only host, file:// during
-   local testing, PHP not installed) it moves on to the next source, and
-   if none of them work, the manually-set arrays in data.js stand as-is.
-   This is what lets the same files run unmodified on either the
-   college's PHP-capable server or a static host like GitHub Pages. */
-async function loadDynamicPhotos(){
-  const sources = ["photos.php", "photos-manifest.json"];
-  for (const src of sources){
-    try {
-      // cache: "no-store" bypasses the browser's own HTTP cache (a layer
-      // below the service worker) — without it, a static server's
-      // default caching headers can make this fetch return a stale
-      // response even though the SW's own strategy is network-first.
-      const res = await fetch(src, { cache: "no-store" });
-      if (!res.ok) continue;
-      const found = await res.json();
-      COLLEGE_DATA.buildings.forEach(b => {
-        if (Array.isArray(found[b.id]) && found[b.id].length > 0){
-          b.photos = found[b.id];
-        }
-      });
-      if (Array.isArray(found.college) && found.college.length > 0){
-        COLLEGE_DATA.institution.photos = found.college;
-      }
-      return; // got a usable source — no need to try the next one
-    } catch (err) {
-      // this source unavailable or invalid — fall through and try the next
+   No server-side code anywhere — two client-side tiers, each used only
+   if the one before it finds nothing:
+
+   1. photos-manifest.json — if present and current (kept fresh by the
+      GitHub Actions workflow on every push, on hosts like GitHub Pages
+      that use it). Fast, exact, one small fetch.
+   2. Pure-JS probing — tries fetching photos/<prefix>-1.jpg, -2.jpg,
+      etc. by the documented naming convention and keeps whatever
+      responds. Needs no build step, no CI, no server-side language —
+      this is what makes automatic detection work on the college's own
+      server too, not just on GitHub Pages. Trade-off: it can only find
+      sequentially-numbered files, not arbitrary names, and costs a
+      bounded number of small HEAD requests instead of one listing.
+
+   If neither finds anything, the manually-set `photos` arrays already
+   in data.js stand as-is — nothing ever breaks, it just stops being
+   automatic. */
+
+function applyFoundPhotos(found){
+  COLLEGE_DATA.buildings.forEach(b => {
+    if (Array.isArray(found[b.id]) && found[b.id].length > 0){
+      b.photos = found[b.id];
     }
+  });
+  if (Array.isArray(found.college) && found.college.length > 0){
+    COLLEGE_DATA.institution.photos = found.college;
   }
+}
+
+// Tries photos/<prefix>-1.<ext>, -2.<ext>, ... in the order JPG/JPEG/PNG/
+// WebP, stopping after two consecutive misses (tolerates one gap, e.g.
+// photo 2 deleted but 3 still there, without scanning forever).
+async function probeCategoryPhotos(prefix, maxCount = 10){
+  const extensions = ["jpg", "jpeg", "png", "webp"];
+  const found = [];
+  let consecutiveMisses = 0;
+  for (let i = 1; i <= maxCount && consecutiveMisses < 2; i++){
+    let hit = null;
+    for (const ext of extensions){
+      const path = `photos/${prefix}-${i}.${ext}`;
+      try {
+        const res = await fetch(path, { method: "HEAD", cache: "no-store" });
+        if (res.ok){ hit = path; break; }
+      } catch (err) { /* treat as a miss and try the next extension */ }
+    }
+    if (hit){ found.push(hit); consecutiveMisses = 0; }
+    else { consecutiveMisses++; }
+  }
+  return found;
+}
+
+async function loadDynamicPhotos(){
+  try {
+    // cache: "no-store" bypasses the browser's own HTTP cache (a layer
+    // below the service worker) — without it, a static server's default
+    // caching headers can make this fetch return a stale response even
+    // though the SW's own strategy for this file is network-first.
+    const res = await fetch("photos-manifest.json", { cache: "no-store" });
+    if (res.ok){
+      const found = await res.json();
+      applyFoundPhotos(found);
+      return;
+    }
+  } catch (err) {
+    // manifest missing or invalid — fall through to probing
+  }
+
+  const categories = [...COLLEGE_DATA.buildings.map(b => b.id), "college"];
+  const probed = {};
+  await Promise.all(categories.map(async prefix => {
+    probed[prefix] = await probeCategoryPhotos(prefix);
+  }));
+  applyFoundPhotos(probed);
 }
 
 /* ---------- boot ---------- */

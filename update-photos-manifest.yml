@@ -1,10 +1,11 @@
 name: Update photos manifest
 
-# Keeps photos-manifest.json in sync with what's actually in photos/,
-# since GitHub Pages can't run photos.php (no PHP on static hosting).
-# Runs generate_photos_manifest.py and commits the result back whenever
-# a push touches the photos folder — the closest static-hosting
-# equivalent to "drop a file in and it appears".
+# Keeps photos-manifest.json in sync with what's actually in photos/.
+# script.js checks this file first, then falls back to pure client-side
+# probing if it's missing — so this workflow just keeps the faster,
+# exact first tier current on hosts (like GitHub Pages) that support
+# GitHub Actions. Runs generate_photos_manifest.py and commits the
+# result back whenever a push touches the photos folder.
 
 on:
   push:

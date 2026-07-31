@@ -3,12 +3,12 @@
 generate_photos_manifest.py — scans photos/ and writes photos-manifest.json.
 
 Run automatically by .github/workflows/update-photos-manifest.yml on every
-push that touches photos/, so a static host like GitHub Pages (which can't
-execute photos.php) still reflects the folder's current contents — add a
-file, push, and it appears; delete one, push, and it's gone. Mirrors
-photos.php's own scanning rules exactly (same prefix matching, same
-extension filter, same natural sort) so behaviour matches regardless of
-which of the two a given deployment ends up using.
+push that touches photos/, so photos-manifest.json (the first of the two
+tiers script.js's loadDynamicPhotos() checks) reflects the folder's current
+contents on hosts like GitHub Pages — add a file, push, and it appears;
+delete one, push, and it's gone. Uses the same prefix matching, extension
+filter, and natural sort as the client-side probing fallback, so results
+match regardless of which tier a given page load ends up using.
 """
 import json
 import re

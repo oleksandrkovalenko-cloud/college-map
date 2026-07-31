@@ -69,7 +69,12 @@ header::after{
   content:"";position:absolute;left:0;bottom:-1px;width:64px;height:3px;
   background:linear-gradient(90deg,var(--brand),var(--gold));border-radius:2px;
 }
-.header-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.header-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.logo-link{flex:0 0 auto;display:block;border-radius:10px;transition:opacity .15s var(--ease),transform .15s var(--ease);}
+.logo-link:hover{opacity:.85;transform:scale(1.04);}
+.logo-link:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:10px;}
+.logo-img{display:block;width:52px;height:52px;object-fit:contain;}
+.header-text{flex:1 1 auto;min-width:200px;}
 .header-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
 .header-link{font-size:12.5px;color:var(--brand);text-decoration:none;font-weight:600;white-space:nowrap;}
 .header-link:hover{text-decoration:underline;}
