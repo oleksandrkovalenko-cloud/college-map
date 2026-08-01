@@ -1,0 +1,19 @@
+# Enables directory listing for this folder and its subfolders
+# (admin/, lab/, tech/, dorm/). script.js reads this listing to detect
+# photos automatically — see the "Directory-listing" tier in
+# loadDynamicPhotos() in script.js, and photos/README.txt for the
+# full explanation.
+#
+# Only relevant on Apache. Nginx doesn't support .htaccess overrides;
+# if the site runs on Nginx instead, ask whoever manages the server to
+# add "autoindex on;" inside the location block for /photos/ — this
+# file alone won't do anything there.
+#
+# Safe to enable: this folder is only ever meant to hold public photos,
+# nothing sensitive.
+Options +Indexes
+
+# Keeps the listing minimal/plain so the HTML is small and simple for
+# script.js to parse — the styling of this page is never seen by users,
+# only read by the fetch() in listFolderPhotos().
+IndexOptions FancyIndexing NameWidth=* SuppressDescription SuppressLastModified SuppressSize
