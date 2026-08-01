@@ -9,6 +9,8 @@
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="favicon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#F7F4EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171715" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -35,14 +37,23 @@
         </button>
       </div>
     </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="room-search" placeholder="Пошук аудиторії, кабінету, служби…" autocomplete="off" aria-label="Пошук аудиторії">
+        <button id="search-clear" class="search-clear" aria-label="Очистити пошук" hidden>×</button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
   </header>
 
   <!-- ============ PAGE: MAP ============ -->
   <div id="page-map" class="page active">
 
     <div class="symbols-bar">
-      <span class="sym"><svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="#8C2A3D" stroke-width="2.5" stroke-dasharray="6 5"/></svg> маршрут трамвая (уздовж вул. Макарова)</span>
-      <span class="sym"><svg width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="#8A8980"/><path d="M10 15 L10 5 M10 5 L7 9 M10 5 L13 9" stroke="#2C2C2A" stroke-width="1.4" fill="none"/></svg> напрямок на північ</span>
+      <span class="sym"><svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="var(--tram)" stroke-width="2.5" stroke-dasharray="6 5"/></svg> маршрут трамвая (уздовж вул. Макарова)</span>
+      <span class="sym"><svg width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="var(--map-compass)"/><path d="M10 15 L10 5 M10 5 L7 9 M10 5 L13 9" stroke="var(--map-text)" stroke-width="1.4" fill="none"/></svg> напрямок на північ</span>
       <span class="note">Схема умовна, не в масштабі. Відстані — розрахункові (по координатах, Google Maps).</span>
     </div>
 
@@ -53,44 +64,44 @@
         <desc>Схема території коледжу з чотирма корпусами. Натисніть на корпус, щоб переглянути перелік аудиторій.</desc>
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M2 1L8 5L2 9" fill="none" stroke="#2C2C2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 1L8 5L2 9" fill="none" stroke="var(--map-text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </marker>
         </defs>
 
-        <rect x="0" y="0" width="640" height="1080" fill="#FFFFFF"/>
+        <rect x="0" y="0" width="640" height="1080" fill="var(--map-bg)"/>
 
-        <rect x="20" y="86" width="120" height="938" fill="#EDEDE8"/>
-        <text x="100" y="555" font-size="16" fill="#5B5A55" text-anchor="middle" transform="rotate(-90 100 555)">вулиця Макарова</text>
-        <line x1="55" y1="80" x2="55" y2="1017" stroke="#8C2A3D" stroke-width="2.5" stroke-dasharray="6 5"/>
+        <rect x="20" y="86" width="120" height="938" fill="var(--map-corridor)"/>
+        <text x="100" y="555" font-size="16" fill="var(--map-text-soft)" text-anchor="middle" transform="rotate(-90 100 555)">вулиця Макарова</text>
+        <line x1="55" y1="80" x2="55" y2="1017" stroke="var(--tram)" stroke-width="2.5" stroke-dasharray="6 5"/>
 
-        <rect x="550" y="168" width="60" height="746" fill="#EDEDE8"/>
-        <text x="580" y="541" font-size="15" fill="#5B5A55" text-anchor="middle" transform="rotate(-90 580 541)">Промислова вулиця</text>
+        <rect x="550" y="168" width="60" height="746" fill="var(--map-corridor)"/>
+        <text x="580" y="541" font-size="15" fill="var(--map-text-soft)" text-anchor="middle" transform="rotate(-90 580 541)">Промислова вулиця</text>
 
-        <text x="300" y="42" font-size="16" font-weight="bold" fill="#2C2C2A" text-anchor="middle">вул. Незалежності</text>
-        <rect x="20" y="58" width="600" height="30" fill="#E4E3DC"/>
+        <text x="300" y="42" font-size="16" font-weight="bold" fill="var(--map-text)" text-anchor="middle">вул. Незалежності</text>
+        <rect x="20" y="58" width="600" height="30" fill="var(--map-streetbar)"/>
         <g id="stop-top-dots" transform="translate(55,73)"></g>
-        <text id="stop-top-label" x="99" y="77" font-size="14" fill="#2C2C2A" font-weight="600"></text>
+        <text id="stop-top-label" x="99" y="77" font-size="14" fill="var(--map-text)" font-weight="600"></text>
 
         <g>
-          <circle cx="592" cy="37" r="17" fill="#FFFFFF" stroke="#8A8980" stroke-width="1"/>
-          <line x1="592" y1="47" x2="592" y2="24" stroke="#2C2C2A" stroke-width="1.5" marker-end="url(#arrow)"/>
-          <text x="592" y="19" font-size="12" fill="#2C2C2A" text-anchor="middle">Пн</text>
+          <circle cx="592" cy="37" r="17" fill="var(--map-bg)" stroke="var(--map-compass)" stroke-width="1"/>
+          <line x1="592" y1="47" x2="592" y2="24" stroke="var(--map-text)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <text x="592" y="19" font-size="12" fill="var(--map-text)" text-anchor="middle">Пн</text>
         </g>
 
-        <rect x="140" y="168" width="410" height="746" rx="10" fill="#FBF3E1" stroke="#C8AD6E" stroke-width="1"/>
+        <rect x="140" y="168" width="410" height="746" rx="10" fill="var(--map-campus)" stroke="var(--map-campus-stroke)" stroke-width="1"/>
 
-        <line x1="240" y1="304" x2="220" y2="428" stroke="#A8A79E" stroke-width="1.5" stroke-dasharray="4 4"/>
-        <line x1="500" y1="354" x2="494" y2="471" stroke="#A8A79E" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="240" y1="304" x2="220" y2="428" stroke="var(--map-connector)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="500" y1="354" x2="494" y2="471" stroke="var(--map-connector)" stroke-width="1.5" stroke-dasharray="4 4"/>
 
         <g id="buildings-layer"></g>
 
-        <rect x="20" y="914" width="600" height="30" fill="#E4E3DC"/>
-        <text x="330" y="933" font-size="15" font-weight="bold" fill="#2C2C2A" text-anchor="middle">Фабрично-Заводська вулиця</text>
+        <rect x="20" y="914" width="600" height="30" fill="var(--map-streetbar)"/>
+        <text x="330" y="933" font-size="15" font-weight="bold" fill="var(--map-text)" text-anchor="middle">Фабрично-Заводська вулиця</text>
 
-        <text x="300" y="1016" font-size="16" font-weight="bold" fill="#2C2C2A" text-anchor="middle">вул. Будівельників</text>
-        <rect x="20" y="1024" width="600" height="30" fill="#E4E3DC"/>
+        <text x="300" y="1016" font-size="16" font-weight="bold" fill="var(--map-text)" text-anchor="middle">вул. Будівельників</text>
+        <rect x="20" y="1024" width="600" height="30" fill="var(--map-streetbar)"/>
         <g id="stop-bottom-dots" transform="translate(55,1039)"></g>
-        <text id="stop-bottom-label" x="99" y="1043" font-size="14" fill="#2C2C2A" font-weight="600"></text>
+        <text id="stop-bottom-label" x="99" y="1043" font-size="14" fill="var(--map-text)" font-weight="600"></text>
       </svg>
     </div>
 
@@ -140,6 +151,10 @@
   <footer>
     <p id="inst-fullname"></p>
     <p>Схему складено на основі наданих зображень території, відкритих картографічних джерел та переліку аудиторій. Рекомендуємо додатково звіряти актуальність номерів маршрутів, графіків роботи закладів і переліку кабінетів.</p>
+    <a href="#" id="report-error-link" class="report-error-link">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Повідомити про помилку
+    </a>
   </footer>
 
 </div>

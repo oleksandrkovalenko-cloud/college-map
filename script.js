@@ -58,6 +58,135 @@ function sortRooms(rooms){
   });
 }
 
+/* ---------- search across all rooms in all buildings ---------- */
+let SEARCH_INDEX = [];
+
+function buildSearchIndex(){
+  const index = [];
+  COLLEGE_DATA.buildings.forEach(b => {
+    b.floors.forEach((f, floorIndex) => {
+      const rooms = f.groups ? f.groups.flatMap(g => g.rooms) : f.rooms;
+      rooms.forEach(r => {
+        index.push({
+          buildingId: b.id,
+          buildingName: b.name,
+          floorIndex,
+          floorName: f.name,
+          num: r.num,
+          desc: r.merged ? "" : (r.desc || "")
+        });
+      });
+    });
+  });
+  return index;
+}
+
+function performSearch(query){
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return SEARCH_INDEX
+    .filter(item => item.num.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q))
+    .slice(0, 8);
+}
+
+function renderSearchResults(results){
+  const box = document.getElementById("search-results");
+  if (results.length === 0){
+    box.innerHTML = "";
+    box.classList.remove("show");
+    return;
+  }
+  box.innerHTML = results.map((r, i) => `
+    <div class="search-result" data-idx="${i}" tabindex="0" role="button">
+      <span class="sr-num">${r.num}</span>
+      <span class="sr-desc">${r.desc || "—"}</span>
+      <span class="sr-loc">${r.buildingName} · ${r.floorName}</span>
+    </div>
+  `).join("");
+  box.classList.add("show");
+  box.querySelectorAll(".search-result").forEach((el, i) => {
+    const activate = () => goToSearchResult(results[i]);
+    el.addEventListener("click", activate);
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " "){ e.preventDefault(); activate(); }
+    });
+  });
+}
+
+function goToSearchResult(result){
+  showPage("page-" + result.buildingId);
+  showFloor(result.buildingId, result.floorIndex);
+  closeSearchResults();
+  const input = document.getElementById("room-search");
+  input.value = "";
+  document.getElementById("search-clear").hidden = true;
+
+  // Briefly highlight the matched row so it's easy to spot after the jump.
+  requestAnimationFrame(() => {
+    const page = document.getElementById("page-" + result.buildingId);
+    const cells = page.querySelectorAll(".floor-panel.active td:first-child, .floor-panel.active td.merged-cell");
+    for (const cell of cells){
+      if (cell.textContent === result.num){
+        const row = cell.closest("tr");
+        row.classList.add("row-highlight");
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => row.classList.remove("row-highlight"), 2200);
+        break;
+      }
+    }
+  });
+}
+
+function closeSearchResults(){
+  const box = document.getElementById("search-results");
+  box.classList.remove("show");
+}
+
+function initSearch(){
+  SEARCH_INDEX = buildSearchIndex();
+  const input = document.getElementById("room-search");
+  const clearBtn = document.getElementById("search-clear");
+  const resultsBox = document.getElementById("search-results");
+  let activeIdx = -1;
+
+  input.addEventListener("input", () => {
+    clearBtn.hidden = input.value.length === 0;
+    activeIdx = -1;
+    renderSearchResults(performSearch(input.value));
+  });
+
+  input.addEventListener("keydown", e => {
+    const items = resultsBox.querySelectorAll(".search-result");
+    if (e.key === "ArrowDown" && items.length){
+      e.preventDefault();
+      activeIdx = Math.min(activeIdx + 1, items.length - 1);
+      items.forEach((el, i) => el.classList.toggle("active", i === activeIdx));
+      items[activeIdx].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "ArrowUp" && items.length){
+      e.preventDefault();
+      activeIdx = Math.max(activeIdx - 1, 0);
+      items.forEach((el, i) => el.classList.toggle("active", i === activeIdx));
+      items[activeIdx].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter" && activeIdx >= 0 && items[activeIdx]){
+      items[activeIdx].click();
+    } else if (e.key === "Escape"){
+      closeSearchResults();
+      input.blur();
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    input.value = "";
+    clearBtn.hidden = true;
+    closeSearchResults();
+    input.focus();
+  });
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".search-wrap")) closeSearchResults();
+  });
+}
+
 /* ---------- map: building shapes (drawn from data, not hardcoded in HTML) ---------- */
 function renderMapBuildings(){
   const layer = document.getElementById("buildings-layer");
@@ -69,7 +198,7 @@ function renderMapBuildings(){
     });
     g.appendChild(svgEl("title", {}));
     g.lastChild.textContent = label;
-    g.appendChild(svgEl("polygon", { points: b.polygon, fill: b.color, stroke: "#FBF3E1", "stroke-width": "2" }));
+    g.appendChild(svgEl("polygon", { points: b.polygon, fill: b.color, stroke: "var(--map-campus)", "stroke-width": "2" }));
     const t = svgEl("text", {
       x: b.labelX, y: b.labelY, "font-size": "34", "font-weight": "bold",
       fill: "#FFFFFF", "text-anchor": "middle", "dominant-baseline": "central"
@@ -144,6 +273,24 @@ async function shareLocation(){
   } catch (err) {
     showToast(shareData.url); // clipboard blocked too — at least show the link
   }
+}
+
+// Includes which page/building the visitor was on, so reports arrive
+// with useful context instead of a blank "something's wrong somewhere".
+function buildReportErrorUrl(){
+  const activePage = document.querySelector(".page.active");
+  let pageLabel = "Головна сторінка (мапа)";
+  if (activePage && activePage.id !== "page-map"){
+    const h1 = activePage.querySelector(".bpage-header h1");
+    pageLabel = h1 ? h1.textContent : activePage.id;
+  }
+  const subject = "Помилка на сайті схеми коледжу";
+  const body = `Опишіть, будь ласка, що саме не так:\n\n\n---\nСторінка: ${pageLabel}`;
+  return "mailto:oleksandr.kovalenko@krkm.dnu.edu.ua"
+    + `?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+function reportError(){
+  window.location.href = buildReportErrorUrl();
 }
 
 let toastTimer = null;
@@ -252,13 +399,13 @@ function renderLocationMap(building){
     <g class="mini-bldg" tabindex="0" role="button" aria-label="${b.name} — перейти на сторінку цього корпусу"
        onclick="showPage('page-${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showPage('page-${b.id}')}">
       <title>${b.name} — перейти на сторінку цього корпусу</title>
-      <polygon points="${b.polygon}" fill="#DEDBCE" stroke="#FBF3E1" stroke-width="2"/>
-      <text x="${b.labelX}" y="${b.labelY}" font-size="30" font-weight="bold" fill="#8D8B7F" text-anchor="middle" dominant-baseline="central">${b.number}</text>
+      <polygon points="${b.polygon}" fill="var(--map-muted-building)" stroke="var(--map-campus)" stroke-width="2"/>
+      <text x="${b.labelX}" y="${b.labelY}" font-size="30" font-weight="bold" fill="var(--map-muted-text)" text-anchor="middle" dominant-baseline="central">${b.number}</text>
     </g>
   `).join("");
   shapes += `
     <polygon points="${building.polygon}" fill="none" stroke="${building.color}" stroke-width="14" opacity="0.35" filter="url(#${glowId})"/>
-    <polygon points="${building.polygon}" fill="${building.color}" stroke="#FFFFFF" stroke-width="3"/>
+    <polygon points="${building.polygon}" fill="${building.color}" stroke="var(--map-campus)" stroke-width="3"/>
     <text x="${building.labelX}" y="${building.labelY}" font-size="34" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">${building.number}</text>
   `;
   return `
@@ -271,7 +418,7 @@ function renderLocationMap(building){
             <feGaussianBlur stdDeviation="5"/>
           </filter>
         </defs>
-        <rect x="140" y="168" width="410" height="746" rx="10" fill="#FBF3E1" stroke="#C8AD6E" stroke-width="1"/>
+        <rect x="140" y="168" width="410" height="746" rx="10" fill="var(--map-campus)" stroke="var(--map-campus-stroke)" stroke-width="1"/>
         ${shapes}
       </svg>
     </div>
@@ -455,4 +602,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("inst-fullname").textContent = COLLEGE_DATA.institution.fullName;
   document.getElementById("share-btn").addEventListener("click", shareLocation);
   document.getElementById("maps-place-link").href = COLLEGE_DATA.directions.placeUrl;
+  document.getElementById("report-error-link").addEventListener("click", e => { e.preventDefault(); reportError(); });
+  initSearch();
 });

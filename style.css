@@ -29,6 +29,23 @@
   --bus:#E07B29;
   --poi:#A67C27;
 
+  /* map-specific tokens — the schematic's own neutral colors, kept
+     separate from general page chrome so the SVG can respond to theme
+     changes too (building/transit colors stay fixed across themes —
+     they're identifiers, not decoration, see note above). */
+  --map-bg:#FFFFFF;
+  --map-corridor:#EDEDE8;
+  --map-streetbar:#E4E3DC;
+  --map-campus:#FBF3E1;
+  --map-campus-stroke:#C8AD6E;
+  --map-text:#2C2C2A;
+  --map-text-soft:#5B5A55;
+  --map-connector:#A8A79E;
+  --map-compass:#8A8980;
+  --map-muted-building:#DEDBCE;
+  --map-muted-building-hover:#C7C3B2;
+  --map-muted-text:#8D8B7F;
+
   --shadow-sm:0 1px 2px rgba(23,32,42,.06), 0 1px 1px rgba(23,32,42,.04);
   --shadow-md:0 4px 14px rgba(23,32,42,.08), 0 1px 3px rgba(23,32,42,.06);
   --shadow-lift:0 10px 24px rgba(23,32,42,.12), 0 2px 6px rgba(23,32,42,.07);
@@ -39,6 +56,45 @@
   --font-body:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   --font-mono:'JetBrains Mono', ui-monospace, "SF Mono", Menlo, monospace;
 }
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#EDEBE3;
+    --ink-soft:#B0AEA6;
+    --ink-mute:#83817A;
+    --line:#3A3930;
+    --paper:#171715;
+    --paper-soft:#201F1B;
+
+    --brand:#5A93C4;
+    --brand-dark:#8FBBE0;
+    --gold:#D8B948;
+    --gold-soft:#332C1A;
+
+    --tram:#C24862;
+    --trolley:#4098D8;
+    --bus:#E8935A;
+    --poi:#C99A3E;
+
+    --map-bg:#171715;
+    --map-corridor:#232320;
+    --map-streetbar:#2A2925;
+    --map-campus:#332D1F;
+    --map-campus-stroke:#8A7440;
+    --map-text:#E8E6DE;
+    --map-text-soft:#A8A69D;
+    --map-connector:#5A5951;
+    --map-compass:#6B6A62;
+    --map-muted-building:#38372F;
+    --map-muted-building-hover:#4A4940;
+    --map-muted-text:#6B6A62;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.35), 0 1px 1px rgba(0,0,0,.25);
+    --shadow-md:0 4px 14px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+    --shadow-lift:0 10px 24px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3);
+  }
+}
+
 
 *{box-sizing:border-box;}
 body{
@@ -94,6 +150,49 @@ header::after{
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ---------- search ---------- */
+.search-wrap{position:relative;margin-top:16px;}
+.search-box{
+  display:flex;align-items:center;gap:10px;background:var(--paper-soft);
+  border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+  transition:border-color .15s var(--ease),box-shadow .15s var(--ease);
+}
+.search-box:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent);}
+.search-box svg{flex:0 0 auto;color:var(--ink-mute);}
+.search-box input{
+  flex:1 1 auto;border:none;background:none;outline:none;font:inherit;
+  font-size:13.5px;color:var(--ink);min-width:0;
+}
+.search-box input::placeholder{color:var(--ink-mute);}
+.search-clear{
+  flex:0 0 auto;border:none;background:var(--line);color:var(--ink-soft);
+  width:20px;height:20px;border-radius:50%;font-size:15px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+.search-clear:hover{background:var(--ink-mute);color:var(--paper);}
+
+.search-results{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;
+  background:var(--paper);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow-lift);max-height:340px;overflow-y:auto;
+  display:none;flex-direction:column;padding:6px;
+}
+.search-results.show{display:flex;}
+.search-result{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:9px 10px;
+  border-radius:8px;cursor:pointer;font-size:13px;
+}
+.search-result:hover,.search-result.active{background:var(--paper-soft);}
+.sr-num{font-family:var(--font-mono);font-weight:700;color:var(--ink);flex:0 0 auto;}
+.sr-desc{color:var(--ink-soft);flex:1 1 auto;min-width:120px;}
+.sr-loc{font-size:11.5px;color:var(--ink-mute);flex:0 0 auto;white-space:nowrap;}
+
+@keyframes rowPulse{
+  0%,100%{background:transparent;}
+  20%,60%{background:var(--gold-soft);}
+}
+.row-highlight td{animation:rowPulse 2.2s ease;}
+
 /* ---------- symbols bar (above map) ---------- */
 .symbols-bar{
   display:flex;flex-wrap:wrap;align-items:center;gap:18px;
@@ -145,10 +244,10 @@ header::after{
 
 .mini-bldg{cursor:pointer;}
 .mini-bldg polygon{transition:fill .15s var(--ease);}
-.mini-bldg:hover polygon{fill:#C7C3B2;}
-.mini-bldg:hover text{fill:#5B5A55;}
+.mini-bldg:hover polygon{fill:var(--map-muted-building-hover);}
+.mini-bldg:hover text{fill:var(--map-text-soft);}
 .mini-bldg:focus-visible{outline:none;}
-.mini-bldg:focus-visible polygon{outline:3px solid var(--brand);outline-offset:2px;fill:#C7C3B2;}
+.mini-bldg:focus-visible polygon{outline:3px solid var(--brand);outline-offset:2px;fill:var(--map-muted-building-hover);}
 
 /* ---------- tiles row (below map) ---------- */
 .tiles-row{display:flex;gap:20px;align-items:stretch;}
@@ -222,6 +321,11 @@ header::after{
 
 footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-mute);}
 footer p{margin:0 0 4px;}
+.report-error-link{
+  display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+  color:var(--brand);text-decoration:none;font-size:12px;font-weight:600;
+}
+.report-error-link:hover{text-decoration:underline;}
 
 @media (max-width:900px){
   .tiles-row{flex-direction:column;}
