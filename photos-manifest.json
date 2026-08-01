@@ -1,7 +1,22 @@
 {
-  "admin": [],
-  "lab": [],
-  "tech": [],
-  "dorm": [],
-  "college": []
+  "admin": [
+    "photos/admin/admin_1.jpg",
+    "photos/admin/admin_2.jpg",
+    "photos/admin/admin_3.jpg",
+    "photos/admin/admin_4.jpg"
+  ],
+  "lab": [
+    "photos/lab/lab_1.jpg"
+  ],
+  "tech": [
+    "photos/tech/tech_1.jpg"
+  ],
+  "dorm": [
+    "photos/dorm/dorm_1.jpg",
+    "photos/dorm/dorm_2.jpg",
+    "photos/dorm/dorm_3.jpg"
+  ],
+  "college": [
+    "photos/college-1.jpg"
+  ]
 }
