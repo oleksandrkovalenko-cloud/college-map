@@ -512,13 +512,15 @@ function renderBuildingPage(b){
    1. photos-manifest.json — if present and current (kept fresh by the
       GitHub Actions workflow on every push, on hosts like GitHub Pages
       that use it). Fast, exact, one small fetch.
-   2. Pure-JS probing — tries fetching photos/<prefix>-1.jpg, -2.jpg,
-      etc. by the documented naming convention and keeps whatever
-      responds. Needs no build step, no CI, no server-side language —
-      this is what makes automatic detection work on the college's own
-      server too, not just on GitHub Pages. Trade-off: it can only find
-      sequentially-numbered files, not arbitrary names, and costs a
-      bounded number of small HEAD requests instead of one listing.
+   2. Directory-listing — fetches photos/<building>/ itself and parses
+      the server's autoindex HTML (the "Index of /photos/admin" page
+      Apache/Nginx generate for a folder with no index file) to read
+      off whatever's actually in there, any filename, any count. This
+      is what makes automatic detection work on the college's own
+      server without any build step — but it needs the server to have
+      directory listing turned on for these folders (see photos/README
+      for the one-line Apache config that enables it; a plain fetch
+      returns a 403 rather than a listing if it's off).
 
    If neither finds anything, the manually-set `photos` arrays already
    in data.js stand as-is — nothing ever breaks, it just stops being
@@ -535,26 +537,41 @@ function applyFoundPhotos(found){
   }
 }
 
-// Tries photos/<prefix>-1.<ext>, -2.<ext>, ... in the order JPG/JPEG/PNG/
-// WebP, stopping after two consecutive misses (tolerates one gap, e.g.
-// photo 2 deleted but 3 still there, without scanning forever).
-async function probeCategoryPhotos(prefix, maxCount = 10){
-  const extensions = ["jpg", "jpeg", "png", "webp"];
-  const found = [];
-  let consecutiveMisses = 0;
-  for (let i = 1; i <= maxCount && consecutiveMisses < 2; i++){
-    let hit = null;
-    for (const ext of extensions){
-      const path = `photos/${prefix}-${i}.${ext}`;
-      try {
-        const res = await fetch(path, { method: "HEAD", cache: "no-store" });
-        if (res.ok){ hit = path; break; }
-      } catch (err) { /* treat as a miss and try the next extension */ }
-    }
-    if (hit){ found.push(hit); consecutiveMisses = 0; }
-    else { consecutiveMisses++; }
+const PHOTO_EXT_RE = /\.(jpe?g|png|webp)$/i;
+
+// Fetches a folder URL and reads the server's own autoindex page for it —
+// works with Apache's and Nginx's default listing formats alike, since
+// both just render <a href="filename"> per file; we don't care about the
+// rest of the markup, only which links end in a supported image extension.
+async function listFolderPhotos(folderUrl){
+  try {
+    const res = await fetch(folderUrl, { cache: "no-store" });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const names = [...doc.querySelectorAll("a[href]")]
+      .map(a => decodeURIComponent(a.getAttribute("href")))
+      .filter(href => PHOTO_EXT_RE.test(href) && !href.includes("://"))
+      .map(href => href.split("/").pop());
+    const unique = [...new Set(names)].sort((a, b) => a.localeCompare(b, "uk"));
+    return unique.map(name => folderUrl.replace(/\/?$/, "/") + name);
+  } catch (err) {
+    return [];
   }
-  return found;
+}
+
+// The college's own photo is a single fixed name (college-1) with a
+// flexible extension, so it's just a small guess across four options —
+// no directory listing needed for one file.
+async function findCollegePhoto(){
+  for (const ext of ["jpg", "jpeg", "png", "webp"]){
+    const path = `photos/college-1.${ext}`;
+    try {
+      const res = await fetch(path, { method: "HEAD", cache: "no-store" });
+      if (res.ok) return [path];
+    } catch (err) { /* try the next extension */ }
+  }
+  return [];
 }
 
 async function loadDynamicPhotos(){
@@ -570,15 +587,16 @@ async function loadDynamicPhotos(){
       return;
     }
   } catch (err) {
-    // manifest missing or invalid — fall through to probing
+    // manifest missing or invalid — fall through to directory listing
   }
 
-  const categories = [...COLLEGE_DATA.buildings.map(b => b.id), "college"];
-  const probed = {};
-  await Promise.all(categories.map(async prefix => {
-    probed[prefix] = await probeCategoryPhotos(prefix);
+  const buildingIds = COLLEGE_DATA.buildings.map(b => b.id);
+  const found = {};
+  await Promise.all(buildingIds.map(async id => {
+    found[id] = await listFolderPhotos(`photos/${id}/`);
   }));
-  applyFoundPhotos(probed);
+  found.college = await findCollegePhoto();
+  applyFoundPhotos(found);
 }
 
 /* ---------- boot ---------- */
